@@ -8,7 +8,7 @@ A simple reinforcement learning-based cryptocurrency trading bot that learns fro
 - Uses RSI, moving average difference, and price ratio as state features
 - Chooses actions using epsilon-greedy Q-learning
 - Simulates leveraged trading with reward-based weight updates
-- Saves learned weights (`W.npy`) after training
+- Saves learned weights (`weights.npy`) after training
 - Prints daily profit and final balance per file
 
 ## Data
