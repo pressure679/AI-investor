@@ -39,7 +39,7 @@ pip install numpy pandas
 To run training on all provided CSV files:
 
 ```bash
-python your_script_name.py
+python AI-investor.py
 ```
 
 After training, the combined balance and daily profits are printed. The trained weights are saved to `W.npy`.
@@ -49,8 +49,8 @@ After training, the combined balance and daily profits are printed. The trained 
 ```
 project-folder/
 │
-├── your_script.py         # Main training logic
-├── W.npy                  # Saved weights after training
+├── AI-investor.py         # Main training logic
+├── weights.npy            # Saved weights after training
 ├── README.md              # This file
 ├── crypto and currency pairs/
 │   ├── BTCUSD_1m_Binance.csv
