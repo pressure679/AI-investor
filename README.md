@@ -1,105 +1,71 @@
-# Lightweight AI Trading Bot (No TensorFlow)
+# AI Investor Trading Bot
 
-A simple, fast, and dependency-light reinforcement learning trading bot using NumPy only — ideal for low-resource environments or quick testing.
+A simple reinforcement learning-based cryptocurrency trading bot that learns from historical 1-minute candle data. The bot uses a basic Q-learning approach with a linear model to take BUY, SELL, or HOLD actions based on technical indicators like RSI and moving averages.
 
-This bot uses Q-learning with a linear function approximator to simulate trades on historical cryptocurrency data (e.g., BTCUSD, ETHUSD) from CSV files. It uses basic indicators like RSI, moving averages, and price ratios to determine BUY/SELL/HOLD actions.
+## Features
 
----
+- Tail reads last 5MB of large CSV files for efficient training
+- Uses RSI, moving average difference, and price ratio as state features
+- Chooses actions using epsilon-greedy Q-learning
+- Simulates leveraged trading with reward-based weight updates
+- Saves learned weights (`W.npy`) after training
+- Prints daily profit and final balance per file
 
-## ✨ Features
+## Data
 
-- ✅ No TensorFlow or PyTorch — runs on low-resource devices like Termux or Chromebooks.
-- 📉 Uses historical CSV data (Binance 1-minute candles).
-- 🔁 Supports training across multiple assets.
-- 📊 Daily profit tracking.
-- 🎓 Q-learning with linear approximator.
-- 💾 Saves and loads weights (`weights.npy`).
-- 🔍 Simple indicators: RSI, MA5/MA20, price ratio.
-- 📂 Reads only the last 5MB of each CSV (efficient).
+The historical 1-minute candlestick CSV files used for training are downloaded from [Kaggle](https://www.kaggle.com/), specifically:
 
----
+- `BTCUSD_1m_Binance.csv`
+- `ETHUSD_1m_Binance.csv`
+- `BNBUSD_1m_Binance.csv`
+- `XRPUSD_1m_Binance.csv`
 
-## 📁 Data Format
+Place these files in the directory set as `DATA_DIR` in the script.
 
-The bot expects CSV files with this structure (like Binance exports):
+## Requirements
 
-```
-Open time,Open,High,Low,Close,Volume,...
-```
+- Python 3.x
+- NumPy
+- Pandas
 
-Ensure the file has at least `"Open time"` and `"Close"` columns.
-
----
-
-## 🛠️ Installation
+Install dependencies:
 
 ```bash
-git clone https://github.com/yourusername/lightweight-ai-trader.git
-cd lightweight-ai-trader
-pip install -r requirements.txt  # Only needs numpy and pandas
+pip install numpy pandas
 ```
 
-> ⚠️ Requires Python 3.7+
+## Usage
 
----
-
-## ▶️ Usage
-
-1. Put your CSV files (e.g., `BTCUSD_1m_Binance.csv`) into the `DATA_DIR` folder.
-2. Run the training script:
+To run training on all provided CSV files:
 
 ```bash
-python ai_trader.py
+python your_script_name.py
 ```
 
-Weights are saved to `weights.npy` after training. On next run, it auto-loads them.
+After training, the combined balance and daily profits are printed. The trained weights are saved to `W.npy`.
 
----
-
-## ⚙️ Configuration
-
-You can tweak constants at the top of the script:
-
-```python
-INITIAL_BALANCE = 100.0
-TP_PERCENT = 0.013
-SL_PERCENT = 0.0085
-LEVERAGE = 10
-EPSILON = 0.1
-ALPHA = 0.1
-GAMMA = 0.9
-```
-
----
-
-## 💡 Example Output
+## File Structure
 
 ```
-Training on BTCUSD_1m_Binance.csv...
-2025-05-10 Profit: +3.25  Balance: 103.25
-2025-05-11 Profit: -1.12  Balance: 102.13
-
-Total combined balance after training: 415.67
-Weights saved to weights.npy
+project-folder/
+│
+├── your_script.py         # Main training logic
+├── W.npy                  # Saved weights after training
+├── README.md              # This file
+├── crypto and currency pairs/
+│   ├── BTCUSD_1m_Binance.csv
+│   ├── ETHUSD_1m_Binance.csv
+│   ├── BNBUSD_1m_Binance.csv
+│   └── XRPUSD_1m_Binance.csv
 ```
 
----
+## License
 
-## 📌 Roadmap Ideas
+This project is open-source and free to use under the MIT license.
 
-- [ ] Add GUI or visualization (e.g., plot daily balance).
-- [ ] Integrate with live data for paper trading.
-- [ ] More indicators (MACD, Bollinger Bands).
-- [ ] Export detailed trade logs.
+## Disclaimer
 
----
-
-## 🧠 License
-
-MIT — feel free to use, modify, or distribute this bot.
-
----
-
+This project is for educational purposes only and does not constitute financial advice. Use at your own risk.
 ## 🙏 Credits
 
 Created by [Your Name] with love for simplicity, performance, and trading experiments.
