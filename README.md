@@ -68,4 +68,4 @@ This project is open-source and free to use under the MIT license.
 This project is for educational purposes only and does not constitute financial advice. Use at your own risk.
 ## 🙏 Credits
 
-Created by [Your Name] with love for simplicity, performance, and trading experiments.
+Created by Vittus Mikiassen with love for simplicity, performance, and trading experiments.
