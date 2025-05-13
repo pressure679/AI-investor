@@ -102,14 +102,24 @@ def train_on_file(filename, W, seq_length=10, leverage=10.0):
         return 0.0, W
 
     df = df[['timestamp', 'close']].dropna()
+    # try:
+    #     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+    # except:
+    #     try:
+    #         df['timestamp'] = pd.to_datetime(df['timestamp'])
+    #     except:
+    #         print(f"Could not parse timestamps in {filename}")
+    #         return 0.0, W
     try:
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     except:
         try:
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-        except:
-            print(f"Could not parse timestamps in {filename}")
+            df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+            df = df.dropna(subset=['timestamp'])
+        except Exception as e:
+            print(f"Could not parse timestamps in {filename}: {e}")
             return 0.0, W
+
 
     df.set_index('timestamp', inplace=True)
     df.sort_index(inplace=True)
@@ -195,10 +205,10 @@ def train_on_file(filename, W, seq_length=10, leverage=10.0):
 # --- Run Training on All Files ---
 
 files = [
-    "BNBUSD_1m_Binance.csv",
-    "BTCUSD_1m_Binance.csv",
     "ETHUSD_1m_Binance.csv",
     "XRPUSD_1m_Binance.csv",
+    "BNBUSD_1m_Binance.csv",
+    "BTCUSD_1m_Binance.csv",
 ]
 
 total_balance = 0.0
@@ -207,6 +217,13 @@ for file in files:
     print(f"\nTraining on {file}...")
     balance, W = train_on_file(path, W, seq_length=SEQ_LENGTH)
     total_balance += balance
+
+# Save weights after training
+np.save("weights.npy", W)
+print("Weights saved to weights.npy")
+
+print(f"\nTotal combined balance after training: {total_balance:.2f}")
+
 
 # Save weights after training
 np.save("weights.npy", W)
