@@ -102,6 +102,8 @@ def train_on_file(filename, W, seq_length=10, leverage=10.0):
         return 0.0, W
 
     df = df[['timestamp', 'close']].dropna()
+    df['close'] = pd.to_numeric(df['close'], errors='coerce')
+    df = df.dropna(subset=['close'])
     # try:
     #     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     # except:
@@ -217,13 +219,6 @@ for file in files:
     print(f"\nTraining on {file}...")
     balance, W = train_on_file(path, W, seq_length=SEQ_LENGTH)
     total_balance += balance
-
-# Save weights after training
-np.save("weights.npy", W)
-print("Weights saved to weights.npy")
-
-print(f"\nTotal combined balance after training: {total_balance:.2f}")
-
 
 # Save weights after training
 np.save("weights.npy", W)
