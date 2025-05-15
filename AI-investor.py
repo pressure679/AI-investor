@@ -9,7 +9,7 @@ import time
 
 # Constants
 DATA_DIR = "/mnt/chromeos/removable/SD Card/Linux-shared-files/crypto and currency pairs"
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_FILE_SIZE = 20 * 1024 * 1024  # 5MB
 INITIAL_BALANCE = 100.0
 TP_PERCENT = 0.013
 SL_PERCENT = 0.0085
@@ -20,8 +20,9 @@ EPSILON = 0.1
 ALPHA = 0.1
 GAMMA = 0.9
 SEQ_LENGTH = 10
-NUM_FEATURES = 3
+NUM_FEATURES = 6
 NUM_ACTIONS = len(ACTIONS)
+EPOCHS = 1
 
 # W = np.random.randn(NUM_FEATURES, NUM_ACTIONS)
 if os.path.exists("weights.npy"):
@@ -49,6 +50,22 @@ def tail_csv_lines(filename, max_bytes=MAX_FILE_SIZE):
             header = f.readline().strip()
         return [header] + lines
 
+def compute_macd(series, fast=12, slow=26, signal=9):
+    ema_fast = series.ewm(span=fast, adjust=False).mean()
+    ema_slow = series.ewm(span=slow, adjust=False).mean()
+    macd_line = ema_fast - ema_slow
+    signal_line = macd_line.ewm(span=signal, adjust=False).mean()
+    return macd_line, signal_line
+
+def compute_bollinger_bands(series, period=20):
+    sma = series.rolling(window=period).mean()
+    std = series.rolling(window=period).std()
+    upper = sma + 2 * std
+    lower = sma - 2 * std
+    width = (upper - lower) / sma
+    return upper, lower, width
+
+
 def compute_rsi(series, period=14):
     delta = series.diff().dropna()
     gain = delta.where(delta > 0, 0).rolling(window=period).mean()
@@ -58,16 +75,28 @@ def compute_rsi(series, period=14):
     return rsi
 
 def get_state_vector(data, i):
-    if i < 20:
+    if i < 30:
         return np.zeros(NUM_FEATURES)
+
     close = data['close'].iloc[i]
     ma5 = data['close'].iloc[i-5:i].mean()
     ma20 = data['close'].iloc[i-20:i].mean()
+
     rsi_series = compute_rsi(data['close'].iloc[i-20:i+1])
-    rsi = rsi_series.iloc[-1] / 100.0
+    rsi = rsi_series.iloc[-1] / 100.0 if not rsi_series.isna().iloc[-1] else 0.5
+
     ma_diff = (ma5 - ma20) / ma20
-    price_ratio = close / ma5
-    return np.array([rsi, ma_diff, price_ratio], dtype=np.float32)
+    price_ratio = close / ma5 if ma5 != 0 else 1.0
+
+    macd_line, signal_line = compute_macd(data['close'].iloc[:i+1])
+    macd_val = macd_line.iloc[-1]
+    signal_val = signal_line.iloc[-1]
+
+    _, _, bb_width = compute_bollinger_bands(data['close'].iloc[i-20:i+1])
+    bb_val = bb_width.iloc[-1] if not bb_width.isna().iloc[-1] else 0
+
+    return np.array([rsi, ma_diff, price_ratio, macd_val, signal_val, bb_val], dtype=np.float32)
+
 
 def choose_action(state_vec):
     if random.random() < EPSILON:
@@ -138,7 +167,7 @@ def train_on_file(filename, W, seq_length=10, leverage=10.0):
     last_day = None
     start_of_day_balance = balance
 
-    for epoch in range(5):
+    for epoch in range(EPOCHS):
         balance = INITIAL_BALANCE
         for i in range(seq_length, len(df) - 1):
             current_price = df['close'].iloc[i]
