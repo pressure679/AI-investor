@@ -1,67 +1,71 @@
-# AI Investor Trading Bot
 
-A simple reinforcement learning-based cryptocurrency trading bot that learns from historical 1-minute candle data. The bot uses a basic Q-learning approach with a linear model to take BUY, SELL, or HOLD actions based on technical indicators like RSI and moving averages.
+# Q-Learning Crypto Training Bot
+
+This Python script is a lightweight backtesting framework for training a Q-learning-based agent to trade cryptocurrency pairs using historical 1-minute interval data.
 
 ## Features
 
-- Tail reads last 5MB of large CSV files for efficient training
-- Uses RSI, moving average difference, and price ratio as state features
-- Chooses actions using epsilon-greedy Q-learning
-- Simulates leveraged trading with reward-based weight updates
-- Saves learned weights (`weights.npy`) after training
-- Prints daily profit and final balance per file
+- Supports multiple crypto pairs: BTC, ETH, BNB, XRP (Binance format).
+- Tail-based CSV loading to minimize memory usage.
+- Feature extraction includes:
+  - RSI (Relative Strength Index)
+  - MACD (Moving Average Convergence Divergence)
+  - Bollinger Band Width
+  - Moving Average differences
+- Uses a simple linear Q-learning model (Q(s,a) = state_vector @ W).
+- Balance updates with leveraged PnL calculations.
+- Auto-loads and saves weight matrices (`weights_*.npy`).
 
-## Data
-
-The historical 1-minute candlestick CSV files used for training are downloaded from [Kaggle](https://www.kaggle.com/), specifically:
-
-- `BTCUSD_1m_Binance.csv`
-- `ETHUSD_1m_Binance.csv`
-- `BNBUSD_1m_Binance.csv`
-- `XRPUSD_1m_Binance.csv`
-
-Place these files in the directory set as `DATA_DIR` in the script.
-
-## Requirements
-
-- Python 3.x
-- NumPy
-- Pandas
-
-Install dependencies:
+## Installation
 
 ```bash
 pip install numpy pandas
 ```
 
+## Constants
+
+- `DATA_DIR`: Location of your historical data files
+- `MAX_FILE_SIZE`: Max file size read per CSV
+- `INITIAL_BALANCE`: Starting virtual balance per run
+- `TP_PERCENT`, `SL_PERCENT`: Not used directly but can be integrated for fixed TP/SL logic
+- `LEVERAGE_BINANCE`, `LEVERAGE_DAT`: Used in PnL computation
+- `SEQ_LENGTH`: Number of candles required for features
+- `NUM_FEATURES`: Fixed to 6 (rsi, ma_diff, price_ratio, macd, signal, bb_width)
+
 ## Usage
 
-To run training on all provided CSV files:
+Place Binance-formatted historical CSV files (1m interval) in the folder specified by `DATA_DIR`.
 
+Each file should at least contain the following columns:
+- `timestamp` or `Open time`
+- `close` or `Close`
+
+Then simply run the script:
 ```bash
-python AI-investor.py
+python train_q_learning_bot.py
 ```
 
-After training, the combined balance and daily profits are printed. The trained weights are saved to `W.npy`.
+## Output
 
-## File Structure
+- Trains on each symbol for 2 epochs
+- Saves/loads `weights_<symbol>.npy`
+- Prints daily profits during training
+- Outputs total balance at the end
 
-```
-project-folder/
-│
-├── AI-investor.py         # Main training logic
-├── weights.npy            # Saved weights after training
-├── README.md              # This file
-├── crypto and currency pairs/
-│   ├── BTCUSD_1m_Binance.csv
-│   ├── ETHUSD_1m_Binance.csv
-│   ├── BNBUSD_1m_Binance.csv
-│   └── XRPUSD_1m_Binance.csv
-```
+## Weight Matrix
 
-## License
+The agent uses a matrix `W` of shape `(NUM_FEATURES, NUM_ACTIONS)` where each column corresponds to Q-values for an action:
+- `0`: HOLD
+- `1`: BUY
+- `2`: SELL
 
-This project is open-source and free to use under the MIT license.
+The agent follows an epsilon-greedy policy.
+
+## Notes
+
+- Files over 20MB are trimmed using a `tail`-like strategy.
+- This is a research/prototyping tool and **not meant for production trading.**
+- No fixed TP/SL levels; rewards are proportional to leveraged profit/loss.
 
 ## Disclaimer
 
