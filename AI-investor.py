@@ -17,6 +17,7 @@ LEVERAGE_BINANCE = 10
 LEVERAGE_DAT = 500
 ACTIONS = ["HOLD", "BUY", "SELL"]
 EPSILON = 0.1
+# EPSILON = max(0.1, EPSILON * 0.995)
 ALPHA = 0.1
 GAMMA = 0.9
 SEQ_LENGTH = 10
@@ -25,12 +26,6 @@ NUM_ACTIONS = len(ACTIONS)
 EPOCHS = 1
 
 # W = np.random.randn(NUM_FEATURES, NUM_ACTIONS)
-if os.path.exists("weights.npy"):
-    W = np.load("weights.npy")
-    print("Loaded existing weights from weights.npy")
-else:
-    W = np.random.randn(NUM_FEATURES, NUM_ACTIONS)
-
 
 # --- Helper Functions ---
 
@@ -99,6 +94,7 @@ def get_state_vector(data, i):
 
 
 def choose_action(state_vec):
+    # print("State vector shape:", state_vec.shape, "content:", state_vec)
     if random.random() < EPSILON:
         return random.randint(0, NUM_ACTIONS - 1)
     q_values = state_vec @ W
@@ -173,6 +169,7 @@ def train_on_file(filename, W, seq_length=10, leverage=10.0):
             current_price = df['close'].iloc[i]
             next_price = df['close'].iloc[i + 1]
             state_vec = get_state_vector(df[['close']], i)
+            # state_vec = get_state_vector(df, i)
             timestamp = df.index[i]
             date_str = timestamp.date()
 
@@ -198,7 +195,8 @@ def train_on_file(filename, W, seq_length=10, leverage=10.0):
                     in_position = True
                     entry_price = current_price
                     last_action = 1
-                    reward = profit / position_size
+                    # reward = profit / position_size
+                    reward = np.tanh(profit / position_size)
 
             elif action == 2:
                 if not in_position:
@@ -211,7 +209,8 @@ def train_on_file(filename, W, seq_length=10, leverage=10.0):
                     in_position = True
                     entry_price = current_price
                     last_action = 2
-                    reward = profit / position_size
+                    # reward = profit / position_size
+                    reward = np.tanh(profit / position_size)
 
             elif action == 0 and in_position:
                 if last_action == 1:
@@ -223,6 +222,7 @@ def train_on_file(filename, W, seq_length=10, leverage=10.0):
                 reward += np.clip(unrealized, -1.0, 1.0) * 0.5
 
             next_state_vec = get_state_vector(df[['close']], i + 1)
+            # next_state_vec = get_state_vector(df, i + 1)
             update_weights(state_vec, action, reward, next_state_vec)
             # time.sleep(0.1)
 
@@ -244,13 +244,21 @@ files = [
 
 total_balance = 0.0
 for file in files:
+    W = np.random.randn(NUM_FEATURES, NUM_ACTIONS)
     path = os.path.join(DATA_DIR, file)
+    if os.path.exists(f"weights_{file.split('.')[0]}.npy"):
+        W = np.load(f"weights_{file.split('.')[0]}.npy")
+        print(f"Loaded existing weights from weights_{file.split('.')[0]}.npy")
+    else:
+        W = np.random.randn(NUM_FEATURES, NUM_ACTIONS)
     print(f"\nTraining on {file}...")
     balance, W = train_on_file(path, W, seq_length=SEQ_LENGTH)
     total_balance += balance
+    np.save(f"weights_{file.split('.')[0]}.npy", W)
+    print(f"Weights saved to {file.split('.')[0]}.npy")
 
 # Save weights after training
-np.save("weights.npy", W)
-print("Weights saved to weights.npy")
+# np.save("weights.npy", W)
+# print("Weights saved to weights.npy")
 
 print(f"\nTotal combined balance after training: {total_balance:.2f}")
